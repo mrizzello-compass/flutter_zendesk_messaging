@@ -42,7 +42,7 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
                 reportNotInitializedFlutterError(result: result)
                 return
             }
-            zendeskMessaging?.show(rootViewController: UIApplication.shared.delegate?.window??.rootViewController, flutterResult: result)
+            zendeskMessaging?.show(rootViewController: rootViewController(), flutterResult: result)
 
         case "showConversation":
             if !isInitialized {
@@ -54,7 +54,7 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
                 result(FlutterError(code: "invalid_argument", message: "conversationId is required", details: nil))
                 return
             }
-            zendeskMessaging?.showConversation(conversationId: conversationId, rootViewController: UIApplication.shared.delegate?.window??.rootViewController, flutterResult: result)
+            zendeskMessaging?.showConversation(conversationId: conversationId, rootViewController: rootViewController(), flutterResult: result)
 
         case "showConversationList":
             if !isInitialized {
@@ -62,7 +62,7 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
                 reportNotInitializedFlutterError(result: result)
                 return
             }
-            zendeskMessaging?.showConversationList(rootViewController: UIApplication.shared.delegate?.window??.rootViewController, flutterResult: result)
+            zendeskMessaging?.showConversationList(rootViewController: rootViewController(), flutterResult: result)
 
         case "startNewConversation":
             if !isInitialized {
@@ -70,7 +70,7 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
                 reportNotInitializedFlutterError(result: result)
                 return
             }
-            zendeskMessaging?.startNewConversation(rootViewController: UIApplication.shared.delegate?.window??.rootViewController, flutterResult: result)
+            zendeskMessaging?.startNewConversation(rootViewController: rootViewController(), flutterResult: result)
 
         case "loginUser":
             if !isInitialized {
@@ -232,7 +232,7 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
             }
             zendeskMessaging?.handleNotificationTap(
                 messageData,
-                rootViewController: UIApplication.shared.delegate?.window??.rootViewController
+                rootViewController: rootViewController()
             ) { success in
                 result(nil)
             }
@@ -260,5 +260,25 @@ public class SwiftZendeskMessagingPlugin: NSObject, FlutterPlugin {
             message: "Zendesk SDK needs to be initialized first",
             details: nil)
         )
+    }
+
+    /// Resolves the root view controller from the active scene when available (iOS 13+),
+    /// otherwise from the app delegate's window for older or non-scene setups.
+    private func rootViewController() -> UIViewController? {
+        if #available(iOS 13.0, *) {
+            for scene in UIApplication.shared.connectedScenes {
+                guard let windowScene = scene as? UIWindowScene,
+                      scene.activationState == .foregroundActive else { continue }
+                if let window = windowScene.windows.first(where: { $0.isKeyWindow }),
+                   let root = window.rootViewController {
+                    return root
+                }
+                if let window = windowScene.windows.first,
+                   let root = window.rootViewController {
+                    return root
+                }
+            }
+        }
+        return UIApplication.shared.delegate?.window??.rootViewController
     }
 }
